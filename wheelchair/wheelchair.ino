@@ -12,7 +12,6 @@ const int slider = 5; // analog
 
 // constants
 const long calculateVeloInterval = 500;
-const long DEFAULT_SPEED = 1000;
 const long FLYWHEEL_SPEED_THRESHOLD = 75;
 
 const int STOPPER_CLOSE_POS = 180;
@@ -20,6 +19,12 @@ const int STOPPER_OPEN_POS = 150;
 
 const long STOPPER_DROP_TIME = 2000;
 const long STOPPER_RETURN_TIME = 1500;
+
+const long MIN_SLIDER = 0;
+const long MAX_SLIDER = 1023;
+
+const long MIN_SPEED = 750;
+const long MAX_SPEED = 1250;
 
 const long LED_FLASH_MS = 750;
 
@@ -51,6 +56,7 @@ class PIDF {
     }
   private:
     const double P, I, D, FF;
+    // F is a primitive method lol, https://forum.arduino.cc/t/what-does-the-f-do-exactly/89384/7
     double totalErr, lastErr;
 };
 
@@ -95,6 +101,7 @@ void loop() {
   long currentTime = millis();
 
   bool flywheelReady = flywheelLogic(currentTime);
+//  flywheelReady = true;
   bool stopperReady = stopperLogic(currentTime);
 
 //  Serial.println(fwReadyStr + flywheelReady);
@@ -120,19 +127,19 @@ const String motorPowStr = "Motor pow: ";
     
 bool flywheelLogic(long currentTime) {
   if (currentTime - lastLoop >= calculateVeloInterval) {
-    long fwSpeed = calculateFlywheelSpeed(currentTime, lastLoop);
-    long targetSpeed = calculateTargetSpeed();
+    double fwSpeed = calculateFlywheelSpeed(currentTime, lastLoop);
+    double targetSpeed = calculateTargetSpeed();
 
     double scale = constrain(controller.scale(targetSpeed, targetSpeed - fwSpeed), -1, 1);
 //    scale = 0.8; // for debugging, TODO remove
 
     setMotorPower(scale);
 
-//    Serial.println("---");
-//
-//    Serial.println(fwSpeedStr + fwSpeed);
-//    Serial.println(targSpeedStr + targetSpeed);
-//    Serial.println(motorPowStr + scale);
+    Serial.println("---");
+
+    Serial.println(fwSpeedStr + fwSpeed);
+    Serial.println(targSpeedStr + targetSpeed);
+    Serial.println(motorPowStr + scale);
 
     lastLoop = currentTime;
 
@@ -176,14 +183,16 @@ double calculateFlywheelSpeed(long currentTime, long lastTime) {
 }
 
 String slideStr = "Slider: ";
-long calculateTargetSpeed() {
+double calculateTargetSpeed() {
   int slideInput = analogRead(slider);
   
-  // TODO: use potentiometer values to adjust target speed
-  
 //  Serial.println(slideStr + slideInput);
+
+  double pos = ((double) (slideInput - MIN_SLIDER)) / (MAX_SLIDER - MIN_SLIDER); // from 0 to 1 the slider position
+
+  double spd = MIN_SPEED + (pos * (MAX_SPEED - MIN_SPEED));
   
-  return DEFAULT_SPEED;
+  return spd;
 }
 
 /**

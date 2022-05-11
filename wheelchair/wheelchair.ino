@@ -15,10 +15,10 @@ const long calculateVeloInterval = 500;
 const long FLYWHEEL_SPEED_THRESHOLD = 75;
 
 const int STOPPER_CLOSE_POS = 180;
-const int STOPPER_OPEN_POS = 150;
+const int STOPPER_OPEN_POS = 130;
 
-const long STOPPER_DROP_TIME = 2000;
-const long STOPPER_RETURN_TIME = 1500;
+const long STOPPER_DROP_TIME = 750;
+const long STOPPER_RETURN_TIME = 300;
 
 const long MIN_SLIDER = 0;
 const long MAX_SLIDER = 1023;
@@ -100,25 +100,18 @@ void loop() {
   // put your main code here, to run repeatedly:
   long currentTime = millis();
 
+  // utility boolean to control all flashing
+  bool flashOn = (currentTime % (2 * LED_FLASH_MS)) < LED_FLASH_MS;
+
   bool flywheelReady = flywheelLogic(currentTime);
-//  flywheelReady = true;
-  bool stopperReady = stopperLogic(currentTime);
+  flywheelReady = true;
+  bool stopperReady = stopperLogic(currentTime, flywheelReady, flashOn);
 
 //  Serial.println(fwReadyStr + flywheelReady);
 //  Serial.println(stprReadyStr + stopperReady);
 
-  // utility boolean to control all flashing
-  bool ledOn = (currentTime % (2 * LED_FLASH_MS)) < LED_FLASH_MS;
-
-  // Flash the button if ready to fire
-  if (flywheelReady && stopperReady) {
-    digitalWrite(led, ledOn ? HIGH : LOW);
-  } else {
-    digitalWrite(led, LOW);
-  }
-
   // flash the builtin LED to show the program is alive
-  digitalWrite(LED_BUILTIN, ledOn ? HIGH : LOW);
+  digitalWrite(LED_BUILTIN, flashOn ? HIGH : LOW);
 }
 
 const String fwSpeedStr = "FW speed: ";
@@ -133,13 +126,13 @@ bool flywheelLogic(long currentTime) {
     double scale = constrain(controller.scale(targetSpeed, targetSpeed - fwSpeed), -1, 1);
 //    scale = 0.8; // for debugging, TODO remove
 
-    setMotorPower(scale);
+//    setMotorPower(scale);
 
-    Serial.println("---");
+//    Serial.println("---");
 
-    Serial.println(fwSpeedStr + fwSpeed);
-    Serial.println(targSpeedStr + targetSpeed);
-    Serial.println(motorPowStr + scale);
+//    Serial.println(fwSpeedStr + fwSpeed);
+//    Serial.println(targSpeedStr + targetSpeed);
+//    Serial.println(motorPowStr + scale);
 
     lastLoop = currentTime;
 
@@ -151,7 +144,7 @@ bool flywheelLogic(long currentTime) {
   return wasFlywheelReady;
 }
 
-bool stopperLogic(long currentTime) {
+bool stopperLogic(long currentTime, bool flywheelReady, bool flashOn) {
   bool stopperReady = currentTime >= stopperStartTime + STOPPER_DROP_TIME + STOPPER_RETURN_TIME;
 
   bool pressed = isButtonPressed();
@@ -167,6 +160,14 @@ bool stopperLogic(long currentTime) {
   } else {
     setStopperPosition(false);
   }
+
+  // Flash the button if ready to fire
+//  if (flywheelReady && stopperReady) {
+//    digitalWrite(led, flashOn ? HIGH : LOW);
+//  } else {
+//    digitalWrite(led, LOW);
+//  }
+  digitalWrite(led, HIGH);
 
   return stopperReady;
 }
@@ -186,9 +187,11 @@ String slideStr = "Slider: ";
 double calculateTargetSpeed() {
   int slideInput = analogRead(slider);
   
-//  Serial.println(slideStr + slideInput);
+  Serial.println(slideStr + String(slideInput));
 
   double pos = ((double) (slideInput - MIN_SLIDER)) / (MAX_SLIDER - MIN_SLIDER); // from 0 to 1 the slider position
+
+  setMotorPower(pos);
 
   double spd = MIN_SPEED + (pos * (MAX_SPEED - MIN_SPEED));
   
@@ -199,7 +202,9 @@ double calculateTargetSpeed() {
  * Set the power on the talon, from -1 to 1.
  */
 void setMotorPower(double power) {
-  int converted = round((power + 1.0) * 90.0);
+  Serial.println("pow: " + String(power, 6));
+  int converted = round((constrain(power, -1., 1.) + 1.0) * 90.0);
+  Serial.println("converted: " + String(converted, 6));
   talon.write(converted); 
 }
 
@@ -212,5 +217,5 @@ void setStopperPosition(bool opened) {
 }
 
 bool isButtonPressed() {
-  return (digitalRead(button) == LOW);
+  return (digitalRead(button) == 1);
 }

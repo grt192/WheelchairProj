@@ -2,9 +2,9 @@
 #include <Servo.h>
 
 // hardware
-Encoder flywheelEncoder(2, 3);
-const int talon_pwm = 10;
-const int stopper_pwm = 9;
+//Encoder flywheelEncoder(2, 3);
+const int talon_pwm = 5;
+const int stopper_pwm = 6;
 
 const int button = 11;
 const int led = 12;
@@ -74,8 +74,10 @@ bool wasFlywheelReady = false;
 
 void setup() {
   Serial.begin(9600);
+
+  Serial.println("POWER ON");
   
-  flywheelEncoder.write(0);
+//  flywheelEncoder.write(0);
   lastPosition = 0;
 
   talon.attach(talon_pwm);
@@ -128,11 +130,11 @@ bool flywheelLogic(long currentTime) {
 
 //    setMotorPower(scale);
 
-//    Serial.println("---");
+    Serial.println("---");
 
-//    Serial.println(fwSpeedStr + fwSpeed);
-//    Serial.println(targSpeedStr + targetSpeed);
-//    Serial.println(motorPowStr + scale);
+    Serial.println(fwSpeedStr + fwSpeed);
+    Serial.println(targSpeedStr + targetSpeed);
+    Serial.println(motorPowStr + scale);
 
     lastLoop = currentTime;
 
@@ -162,18 +164,18 @@ bool stopperLogic(long currentTime, bool flywheelReady, bool flashOn) {
   }
 
   // Flash the button if ready to fire
-//  if (flywheelReady && stopperReady) {
-//    digitalWrite(led, flashOn ? HIGH : LOW);
-//  } else {
-//    digitalWrite(led, LOW);
-//  }
-  digitalWrite(led, HIGH);
+  if (flywheelReady && stopperReady) {
+    digitalWrite(led, flashOn ? HIGH : LOW);
+  } else {
+    digitalWrite(led, LOW);
+  }
 
   return stopperReady;
 }
 
 double calculateFlywheelSpeed(long currentTime, long lastTime) {
-  long newPosition = flywheelEncoder.read();
+//  long newPosition = flywheelEncoder.read();
+  long newPosition = 0;
 
   // velocity
   double diff = ((double) (newPosition - lastPosition)) / (currentTime - lastTime);
@@ -187,7 +189,7 @@ String slideStr = "Slider: ";
 double calculateTargetSpeed() {
   int slideInput = analogRead(slider);
   
-  Serial.println(slideStr + String(slideInput));
+//  Serial.println(slideStr + String(slideInput));
 
   double pos = ((double) (slideInput - MIN_SLIDER)) / (MAX_SLIDER - MIN_SLIDER); // from 0 to 1 the slider position
 
@@ -202,10 +204,11 @@ double calculateTargetSpeed() {
  * Set the power on the talon, from -1 to 1.
  */
 void setMotorPower(double power) {
-  Serial.println("pow: " + String(power, 6));
-  int converted = round((constrain(power, -1., 1.) + 1.0) * 90.0);
-  Serial.println("converted: " + String(converted, 6));
-  talon.write(converted); 
+//  Serial.println(power);
+
+  double constrained = constrain(power, -1., 1.);
+  double writeTime = (constrained * 500.) + 1500.; // scale from 1000 to 2000
+  talon.writeMicroseconds(round(writeTime));
 }
 
 void setStopperPosition(bool opened) {

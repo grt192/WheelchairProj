@@ -2,7 +2,7 @@
 #include <Servo.h>
 
 // hardware
-//Encoder flywheelEncoder(2, 3);
+Encoder flywheelEncoder(2, 3);
 const int talon_pwm = 5;
 const int stopper_pwm = 6;
 
@@ -23,8 +23,8 @@ const long STOPPER_RETURN_TIME = 300;
 const long MIN_SLIDER = 0;
 const long MAX_SLIDER = 1023;
 
-const long MIN_SPEED = 750;
-const long MAX_SPEED = 1250;
+const long MIN_SPEED = 4.0;
+const long MAX_SPEED = 15.0;
 
 const long LED_FLASH_MS = 750;
 
@@ -60,7 +60,7 @@ class PIDF {
     double totalErr, lastErr;
 };
 
-PIDF controller(0, 0, 0, 1.0/1000);
+PIDF controller(0.04, 0, 0, 0.053);
 
 // helpers
 Servo talon;
@@ -77,7 +77,7 @@ void setup() {
 
   Serial.println("POWER ON");
   
-//  flywheelEncoder.write(0);
+  flywheelEncoder.write(0);
   lastPosition = 0;
 
   talon.attach(talon_pwm);
@@ -128,7 +128,7 @@ bool flywheelLogic(long currentTime) {
     double scale = constrain(controller.scale(targetSpeed, targetSpeed - fwSpeed), -1, 1);
 //    scale = 0.8; // for debugging, TODO remove
 
-//    setMotorPower(scale);
+    setMotorPower(scale);
 
     Serial.println("---");
 
@@ -174,8 +174,9 @@ bool stopperLogic(long currentTime, bool flywheelReady, bool flashOn) {
 }
 
 double calculateFlywheelSpeed(long currentTime, long lastTime) {
-//  long newPosition = flywheelEncoder.read();
-  long newPosition = 0;
+  long newPosition = flywheelEncoder.read();
+
+//  Serial.println("pos: " + String(newPosition));
 
   // velocity
   double diff = ((double) (newPosition - lastPosition)) / (currentTime - lastTime);
@@ -193,7 +194,8 @@ double calculateTargetSpeed() {
 
   double pos = ((double) (slideInput - MIN_SLIDER)) / (MAX_SLIDER - MIN_SLIDER); // from 0 to 1 the slider position
 
-  setMotorPower(pos);
+  // for testing: set motor power to slider position
+//  setMotorPower(pos);
 
   double spd = MIN_SPEED + (pos * (MAX_SPEED - MIN_SPEED));
   

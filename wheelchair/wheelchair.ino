@@ -11,7 +11,7 @@ const int led = 12;
 const int slider = 5; // analog
 
 // constants
-const long calculateVeloInterval = 500;
+const long calculateVeloInterval = 750;
 const long FLYWHEEL_SPEED_THRESHOLD = 75;
 
 const int STOPPER_CLOSE_POS = 180;
@@ -24,7 +24,7 @@ const long MIN_SLIDER = 0;
 const long MAX_SLIDER = 1023;
 
 const long MIN_SPEED = 4.0;
-const long MAX_SPEED = 15.0;
+const long MAX_SPEED = 8.0;
 
 const long LED_FLASH_MS = 750;
 
@@ -60,7 +60,7 @@ class PIDF {
     double totalErr, lastErr;
 };
 
-PIDF controller(0.04, 0, 0, 0.053);
+PIDF controller(0.075, 0.001, 0.0055, 0.100);
 
 // helpers
 Servo talon;
@@ -176,7 +176,8 @@ bool stopperLogic(long currentTime, bool flywheelReady, bool flashOn) {
 double calculateFlywheelSpeed(long currentTime, long lastTime) {
   long newPosition = flywheelEncoder.read();
 
-//  Serial.println("pos: " + String(newPosition));
+  Serial.println("pos: " + String(newPosition));
+  Serial.println("delta: " + String(newPosition - lastPosition));
 
   // velocity
   double diff = ((double) (newPosition - lastPosition)) / (currentTime - lastTime);

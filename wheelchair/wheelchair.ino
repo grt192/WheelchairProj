@@ -119,6 +119,9 @@ void loop() {
 const String fwSpeedStr = "FW speed: ";
 const String targSpeedStr = "Target speed: ";
 const String motorPowStr = "Motor pow: ";
+
+const float MAX_SLIDER_POW = 0.9;
+const float MIN_SLIDER_POW = 0.3;
     
 bool flywheelLogic(long currentTime) {
   if (currentTime - lastLoop >= calculateVeloInterval) {
@@ -127,7 +130,7 @@ bool flywheelLogic(long currentTime) {
 
 //    double scale = constrain(controller.scale(targetSpeed, targetSpeed - fwSpeed), -1, 1);
 //    scale = 0; // for debugging, TODO remove
-    double scale = getSliderPosition();
+    double scale = (getSliderPosition() * (MAX_SLIDER_POW - MIN_SLIDER_POW)) + MIN_SLIDER_POW;
       
     setMotorPower(scale);
 

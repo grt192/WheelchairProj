@@ -23,8 +23,8 @@ const long STOPPER_RETURN_TIME = 300;
 const long MIN_SLIDER = 0;
 const long MAX_SLIDER = 1023;
 
-const long MIN_SPEED = 4.0;
-const long MAX_SPEED = 8.0;
+const float MIN_SPEED = 5.5;
+const float MAX_SPEED = 8.5;
 
 const long LED_FLASH_MS = 750;
 
@@ -60,7 +60,7 @@ class PIDF {
     double totalErr, lastErr;
 };
 
-PIDF controller(0.075, 0.001, 0.0055, 0.100);
+PIDF controller(0.075, 0.001, 0.0055, 0.800);
 
 // helpers
 Servo talon;
@@ -123,23 +123,25 @@ const String motorPowStr = "Motor pow: ";
 bool flywheelLogic(long currentTime) {
   if (currentTime - lastLoop >= calculateVeloInterval) {
     double fwSpeed = calculateFlywheelSpeed(currentTime, lastLoop);
-    double targetSpeed = calculateTargetSpeed();
+//    double targetSpeed = calculateTargetSpeed();
 
-    double scale = constrain(controller.scale(targetSpeed, targetSpeed - fwSpeed), -1, 1);
-//    scale = 0.8; // for debugging, TODO remove
-
+//    double scale = constrain(controller.scale(targetSpeed, targetSpeed - fwSpeed), -1, 1);
+//    scale = 0; // for debugging, TODO remove
+    double scale = getSliderPosition();
+      
     setMotorPower(scale);
 
     Serial.println("---");
 
     Serial.println(fwSpeedStr + fwSpeed);
-    Serial.println(targSpeedStr + targetSpeed);
+//    Serial.println(targSpeedStr + targetSpeed);
     Serial.println(motorPowStr + scale);
 
     lastLoop = currentTime;
 
     // store whether the flywheel was ready for future loops where we don't recalc the velocity
-    wasFlywheelReady = abs(targetSpeed - fwSpeed) <= FLYWHEEL_SPEED_THRESHOLD;
+//    wasFlywheelReady = abs(targetSpeed - fwSpeed) <= FLYWHEEL_SPEED_THRESHOLD;
+     wasFlywheelReady = true;
   }
 
   // whether the flywheel is up to speed + ready to fire
@@ -188,12 +190,17 @@ double calculateFlywheelSpeed(long currentTime, long lastTime) {
 }
 
 String slideStr = "Slider: ";
-double calculateTargetSpeed() {
+double getSliderPosition() {
   int slideInput = analogRead(slider);
   
 //  Serial.println(slideStr + String(slideInput));
 
   double pos = ((double) (slideInput - MIN_SLIDER)) / (MAX_SLIDER - MIN_SLIDER); // from 0 to 1 the slider position
+  return pos;
+}
+
+double calculateTargetSpeed() {
+  double pos = getSliderPosition();
 
   // for testing: set motor power to slider position
 //  setMotorPower(pos);
